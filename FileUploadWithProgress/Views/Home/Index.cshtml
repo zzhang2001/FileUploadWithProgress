@@ -1,0 +1,75 @@
+﻿<h2>Upload With Progress Bar</h2>
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div class="form-group">
+                <label for="filename">File name:</label>
+                <input type="text" id="filename" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label for="thefile">File name:</label>
+                <input type="file" id="thefile" class="form-control" style="line-height: 1em" />
+            </div>
+            <div class="form-group">
+                <div class="progress">
+                    <div id="progress" class="progress-bar" style="transition: none;width: 0%">0%</div>
+                </div>
+                <div id="msg"></div>
+            </div>
+            <div class="form-group">
+                <input type="button" id="upload" class="btn btn-default" value="Upload" />
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            $('#upload').click(function () {
+                $('#progress').css('width', '0');
+                $('#msg').html('');
+                if ($('#filename').val() == '' || $('#thefile').val() == '') {
+                    $('#msg').html('Please enter file name and select file.');
+                    return;
+                }
+                var formData = new FormData();
+                formData.append('filename', $('#filename').val());
+                formData.append('thefile', $('#thefile')[0].files[0]);
+                $('#upload').attr('disabled', 'disabled');
+                $('#msg').html('Uploading file ...');
+                $.ajax({
+                    url: '/api/upload',
+                    data: formData,
+                    // Do not process formData object.
+                    processData: false,
+                    // Do not explicitly set content type. The correct content type is set automatically.
+                    contentType: false,
+                    type: 'POST',
+                    // Callback for creating the XMLHttpRequest object.
+                    xhr: function () {
+                        var newXhr = new XMLHttpRequest();
+                        // Attach progress event handler.
+                        newXhr.upload.addEventListener('progress', function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = Math.floor(evt.loaded / evt.total * 100);
+                                $('#progress').text(percentComplete + '%');
+                                $('#progress').css('width', percentComplete + '%');
+                                console.log('Total: ' + evt.total + ', uploaded: ' + evt.loaded);
+                            }
+                        }, false);
+                        return newXhr;
+                    },
+                    success: function () {
+                        $('#msg').text('File uploaded successfully.');
+                        $('#upload').removeAttr('disabled');
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        $('#msg').text(jqXHR.statusText);
+                    }
+                });
+
+            });
+        });
+    </script>
+}
